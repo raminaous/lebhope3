@@ -1,12 +1,12 @@
-"use client"; // Make sure this is added at the top
+"use client"; // Add this if using client components
 
 import { useState, useEffect } from "react";
-import { getDocs, collection } from "firebase/firestore"; // Import Firestore functions
+import { getDocs, collection } from "firebase/firestore"; // Firestore functions
 import { db } from "../Database/Config"; // Adjust path as needed
 import ProductForm from "../components/ProductForm"; // Adjust path as needed
 import ProductList from "../components/ProductList"; // Adjust path as needed
-import Link from "next/link"; // Import Next.js Link
-import { useRouter } from "next/navigation"; // Import useRouter
+import Link from "next/link"; // Next.js Link
+import { useRouter } from "next/navigation"; // useRouter hook
 import {
   addProduct,
   deleteProduct,
@@ -18,20 +18,21 @@ import {
 const useAddProduct = () => {
   const [uploading, setUploading] = useState(false);
 
-  const handleAddProduct = async (product, file) => {
+  const handleAddProduct = async (product, files) => {
     setUploading(true);
     try {
-      // Upload the image to Firebase Storage
-      const imageUrl = await uploadImage(file);
+      // Upload each file and get its URL
+      const imageUrls = await Promise.all(
+        files.map((file) => uploadImage(file))
+      );
 
-      // Add the product to Firestore with the image URL
+      // Add the product to Firestore with an array of image URLs
       await addProduct({
         ...product,
         sizes: product.sizes.split(",").map((size) => size.trim()), // Convert sizes to an array
-        imageUrl,
+        imageUrls, // Store all uploaded image URLs in an array
       });
 
-      // Optionally show a success message or reset the form state
       alert("Product added successfully!");
     } catch (error) {
       console.error("Error adding product:", error);
@@ -48,23 +49,25 @@ const useAddProduct = () => {
 const useEditProduct = () => {
   const [uploading, setUploading] = useState(false);
 
-  const handleEditProduct = async (id, updatedProduct, file) => {
+  const handleEditProduct = async (id, updatedProduct, files) => {
     setUploading(true);
     try {
-      // If there's a new file, upload the image
-      if (file) {
-        const imageUrl = await uploadImage(file);
-        updatedProduct.imageUrl = imageUrl; // Update the image URL in the product object
+      // If there are new files, upload each one and get URLs
+      if (files && files.length > 0) {
+        const imageUrls = await Promise.all(
+          files.map((file) => uploadImage(file))
+        );
+        updatedProduct.imageUrls = imageUrls; // Update the product's imageUrls array
       }
 
-      // Check if sizes is an array or string before splitting
+      // Convert sizes to array if it's not already
       const sizesArray = Array.isArray(updatedProduct.sizes)
-        ? updatedProduct.sizes // If it's already an array, use it as is
-        : updatedProduct.sizes.split(",").map((size) => size.trim()); // Split string into an array
+        ? updatedProduct.sizes
+        : updatedProduct.sizes.split(",").map((size) => size.trim());
 
       await editProduct(id, {
         ...updatedProduct,
-        sizes: sizesArray, // Assign the sizes array
+        sizes: sizesArray,
       });
 
       alert("Product updated successfully!");
@@ -119,12 +122,12 @@ export default function Admin() {
   }, []);
 
   // Handle form submission for adding or editing a product
-  const handleSubmit = async (product, file) => {
+  const handleSubmit = async (product, files) => {
     if (editingProduct) {
-      await handleEditProduct(editingProduct.id, product, file);
+      await handleEditProduct(editingProduct.id, product, files);
       setEditingProduct(null); // Reset editing state
     } else {
-      await handleAddProduct(product, file);
+      await handleAddProduct(product, files);
     }
     fetchProducts(); // Refresh product list after submission
   };
@@ -174,8 +177,7 @@ export default function Admin() {
         products={products}
         onEdit={handleEdit}
         onDelete={handleDeleteProduct}
-      />{" "}
-      {/* Render product list with delete functionality */}
+      />
     </div>
   );
 }

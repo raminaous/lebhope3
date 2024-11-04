@@ -17,7 +17,7 @@ const Navbar = ({ cartItemCount }) => {
   return (
     <div style={headerStyle(color)}>
       <nav style={navbarStyle}>
-        <div style={brandTextStyle}>Your Brand Name</div>
+        <div style={brandTextStyle}>The Lebanse Flame</div>
         <Link href="/cart">
           <div style={cartIconStyle}>
             <AiOutlineShoppingCart size={30} style={{ color: "#ffffff" }} />

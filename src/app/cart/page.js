@@ -9,6 +9,7 @@ import Image from "next/image";
 export default function CartPage() {
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
+  const [activeImageIndexes, setActiveImageIndexes] = useState({}); // Object to hold active image index for each item
   const router = useRouter();
 
   useEffect(() => {
@@ -20,7 +21,36 @@ export default function CartPage() {
       0
     );
     setTotal(calculatedTotal);
+
+    // Initialize active image indexes
+    const indexes = {};
+    storedCart.forEach((item) => {
+      indexes[item.id] = 0; // Assuming each item has a unique 'id'
+    });
+    setActiveImageIndexes(indexes);
   }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setActiveImageIndexes((prevIndexes) =>
+        Object.keys(prevIndexes).reduce((newIndexes, key) => {
+          const item = cart.find((cartItem) => cartItem.id === key); // Find the corresponding cart item
+          if (
+            item &&
+            Array.isArray(item.imageUrls) &&
+            item.imageUrls.length > 1
+          ) {
+            newIndexes[key] = (prevIndexes[key] + 1) % item.imageUrls.length;
+          } else {
+            newIndexes[key] = 0; // Stay on the first image if only one image
+          }
+          return newIndexes;
+        }, {})
+      );
+    }, 3000); // Switch images every 3 seconds
+
+    return () => clearInterval(intervalId);
+  }, [cart]); // Update interval based on cart changes
 
   const handleRemoveItem = (index) => {
     const updatedCart = cart.filter((_, i) => i !== index);
@@ -32,6 +62,11 @@ export default function CartPage() {
       0
     );
     setTotal(newTotal);
+
+    // Update active image indexes
+    const newIndexes = { ...activeImageIndexes };
+    delete newIndexes[cart[index].id]; // Remove the index of the removed item
+    setActiveImageIndexes(newIndexes);
   };
 
   const handleQuantityChange = (index, newQuantity) => {
@@ -88,7 +123,12 @@ export default function CartPage() {
                   <div className="col-2">
                     <Image
                       className="img-fluid"
-                      src={item.imageUrl}
+                      src={
+                        Array.isArray(item.imageUrls) &&
+                        item.imageUrls.length > 0
+                          ? item.imageUrls[activeImageIndexes[item.id] || 0]
+                          : "/default-image.png" // Fallback image if none available
+                      }
                       alt={item.name}
                       width={500} // Set the desired width
                       height={500}

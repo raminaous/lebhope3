@@ -19,9 +19,15 @@
   font-weight: bold;
 }
 
-.product-table img.product-image {
+.product-images-container {
+  display: flex;
+  gap: 10px;
+}
+
+.product-image {
   width: 80px;
-  height: auto;
+  height: 80px;
+  object-fit: cover;
   border-radius: 4px;
 }
 

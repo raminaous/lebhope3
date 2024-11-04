@@ -1,4 +1,4 @@
-"use client"; // Add this line if using client components
+"use client"; // Add this if using client components
 
 import { useState, useEffect } from "react";
 import "../styles/ProductForm.css";
@@ -9,9 +9,9 @@ export default function ProductForm({ onSubmit, initialData }) {
     description: "",
     sizes: "",
     price: "",
-    imageUrl: "",
+    imageUrls: [],
   });
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]); // To handle multiple files
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -26,14 +26,14 @@ export default function ProductForm({ onSubmit, initialData }) {
   };
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    setFiles([...e.target.files]); // Get all selected files
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUploading(true);
 
-    await onSubmit(product, file);
+    await onSubmit(product, files); // Pass array of files to onSubmit
 
     setUploading(false);
     setProduct({
@@ -41,9 +41,9 @@ export default function ProductForm({ onSubmit, initialData }) {
       description: "",
       sizes: "",
       price: "",
-      imageUrl: "",
+      imageUrls: [],
     });
-    setFile(null);
+    setFiles([]);
   };
 
   return (
@@ -83,7 +83,12 @@ export default function ProductForm({ onSubmit, initialData }) {
         className="input-field"
         required
       />
-      <input type="file" onChange={handleFileChange} className="file-input" />
+      <input
+        type="file"
+        multiple
+        onChange={handleFileChange}
+        className="file-input"
+      />
       <button type="submit" className="submit-button" disabled={uploading}>
         {initialData ? "Update Product" : "Add Product"}
       </button>
